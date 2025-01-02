@@ -10,6 +10,7 @@ object MimaFilters extends AutoPlugin {
   object autoImport {
     val mimaReferenceVersion = settingKey[Option[String]]("Scala version number to run MiMa against")
   }
+
   import autoImport._
 
   override val globalSettings = Seq(
@@ -41,7 +42,10 @@ object MimaFilters extends AutoPlugin {
 
     // KEEP: the CommonErrors object is not a public API
     ProblemFilters.exclude[MissingClassProblem]("scala.collection.generic.CommonErrors"),
-    ProblemFilters.exclude[MissingClassProblem]("scala.collection.generic.CommonErrors$")
+    ProblemFilters.exclude[MissingClassProblem]("scala.collection.generic.CommonErrors$"),
+
+    //ADD: Await#CompletedFuture is not a public API
+    ProblemFilters.exclude[MissingClassProblem]("scala.concurrent.Await$CompletedFuture$")
   )
 
   override val buildSettings = Seq(
@@ -49,9 +53,9 @@ object MimaFilters extends AutoPlugin {
   )
 
   val mimaSettings: Seq[Setting[_]] = Def.settings(
-    mimaPreviousArtifacts       := mimaReferenceVersion.value.map(organization.value % name.value % _).toSet,
-    mimaCheckDirection          := "both",
-    mimaBinaryIssueFilters     ++= mimaFilters,
-//  mimaReportSignatureProblems := true, // TODO: enable
+    mimaPreviousArtifacts := mimaReferenceVersion.value.map(organization.value % name.value % _).toSet,
+    mimaCheckDirection := "both",
+    mimaBinaryIssueFilters ++= mimaFilters,
+    //  mimaReportSignatureProblems := true, // TODO: enable
   )
 }

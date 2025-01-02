@@ -125,6 +125,9 @@ package object concurrent {
 }
 
 package concurrent {
+
+  import scala.util.Try
+
   /**
    * This marker trait is used by [[Await]] to ensure that [[Awaitable.ready]] and [[Awaitable.result]]
    * are not directly called by user code. An implicit instance of this trait is only available when
@@ -170,7 +173,7 @@ package concurrent {
     @throws(classOf[TimeoutException])
     @throws(classOf[InterruptedException])
     final def ready[T](awaitable: Awaitable[T], atMost: Duration): awaitable.type = awaitable match {
-      case f: Future[T] if f.isCompleted => awaitable.ready(atMost)(AwaitPermission)
+      case f: Future[T] if f.isCompleted => awaitable
       case _ => blocking(awaitable.ready(atMost)(AwaitPermission))
     }
 
@@ -197,8 +200,12 @@ package concurrent {
     @throws(classOf[TimeoutException])
     @throws(classOf[InterruptedException])
     final def result[T](awaitable: Awaitable[T], atMost: Duration): T = awaitable match {
-      case f: Future[T] if f.isCompleted => f.result(atMost)(AwaitPermission)
+      case CompletedFuture(result: Try[T] @unchecked) => result.get
       case _ => blocking(awaitable.result(atMost)(AwaitPermission))
+    }
+
+    private final object CompletedFuture {
+      def unapply[T](f: Future[T]): Option[Try[T]] = f.value
     }
   }
 }
